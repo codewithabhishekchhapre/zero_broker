@@ -18,19 +18,16 @@ if (!fs.existsSync(uploadDir)) {
   console.log(`Created directory: ${uploadDir}`);
 }
 
-// Configure storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    // Create unique filename with original extension
     const uniqueFilename = `${uuidv4()}${path.extname(file.originalname)}`;
     cb(null, uniqueFilename);
   }
 });
 
-// File filter to only accept PDFs
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === 'application/pdf') {
     cb(null, true);
@@ -45,7 +42,6 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-// Error handling middleware for multer errors
 const handleMulterError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
