@@ -36,7 +36,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: fileFilter
@@ -66,14 +66,15 @@ const handleMulterError = (err, req, res, next) => {
 // Endpoint to handle property listing with PDF upload
 router.post(
   '/property-listings-by-agent',
-  accessTokenVerify, 
-  authorizeRoles('seller'), 
+  accessTokenVerify,
+  authorizeRoles('seller'),
   upload.single('propertyPDF'),
   handleMulterError,
   async (req, res) => {
     try {
-      const formData = req.body;
-      
+      const { name, email, phone,propertyName, propertyType, propertyLocation, bedrooms, bathrooms, propertySize, preferredContactMethod, additionalInfo, filePath, availabilityForVisit, urgency, emiratesId, passportNumber } = req.body;
+      // console.log(formData);
+
       let fileData = null;
       if (req.file) {
         fileData = {
@@ -83,26 +84,33 @@ router.post(
           size: req.file.size
         };
       }
-      
-      console.log('Form data received:', req.body);
-      console.log('File details:', req.file);
 
-    //   res.status(201).json({
-    //           success: true,
-    //           message: 'Property listing created successfully',
-    //         //   listingId: propertyListing.id
-    //         });
-      
       try {
-        const PropertyListing = require('../models/PropertyListing');
-        
-        const propertyListing = await PropertyListing.create({
-          ...formData,
-          userId: req.user.id,
+        const RequestedProperty = require('../models/RequestedProperty');
+
+        const propertyListing = await RequestedProperty.create({
+          name,
+          email,
+          phone,
+          propertyName,
+          propertyType,
+          address:propertyLocation,
+          bedrooms,
+          bathrooms,
+          propertySize,
+          preferredContactMethod,
+          additionalInfo,
+          filePath,
+          availabilityForVisit,
+          urgency,
+          emiratesId,
+          passportNumber,
+          mode: "agent",
+          seller: req.user.id,
           documentPath: fileData ? fileData.path : null,
           documentName: fileData ? fileData.originalName : null
         });
-        
+
         res.status(201).json({
           success: true,
           message: 'Property listing created successfully',
@@ -112,7 +120,7 @@ router.post(
         console.error('Database error:', dbError);
         throw new Error(`Database operation failed: ${dbError.message}`);
       }
-      
+
     } catch (error) {
       console.error('Error saving property listing:', error);
       res.status(500).json({
@@ -123,6 +131,20 @@ router.post(
     }
   }
 );
+
+
+// Random Forest
+
+// router.get('/accepted-by-me', 
+//   accessTokenVerify, 
+//   authorizeRoles('driver'),
+//   async(req,res)=>{
+//     const userId = req.user._id;
+
+//   }
+// )
+
+// Random Forest
 
 module.exports = router;
 

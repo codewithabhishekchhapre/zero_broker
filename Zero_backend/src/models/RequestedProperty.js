@@ -4,35 +4,62 @@ const requestedPropertySchema = new mongoose.Schema(
   {
     seller: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Reference to the seller
+      ref: "User",
       required: true,
-      index: true, // Faster queries
+      index: true,
     },
 
-    propertyName: { type: String, required: true },
-    propertyType: { type: String, required: true },
-    purpose: { type: String, enum: ["Sale", "Rent"], required: true },
-    area: { type: String, required: true },
-    address: { type: String, required: true },
-    location: { type: String, required: true },
-
-    reasonForSaleOrRent: { type: String }, // Optional field
-
+    // Common fields
+    propertyType: { type: String, required: true }, // e.g., "Apartment", "Villa"
+    mode: {
+      type: String,
+      enum: ["self", "agent"],
+      default: "self",
+    },
     status: {
       type: String,
-      enum: ["Pending", "Accepted","Listed"],
+      enum: ["Pending", "Accepted", "Listed", "Rejected"],
       default: "Pending",
     },
 
+    // Random Forest
+    additionalInfo: { type: String },
+
+    // Fields for "self" mode
+    propertyName: { type: String },
+    purpose: { type: String, enum: ["Sale", "Rent"] },
+    area: { type: Number },
+    address: { type: String },
+    location: { type: String },
+    reasonForSaleOrRent: { type: String },
+
+    // Fields for "agent" mode
+    name: { type: String },
+    email: { type: String },
+    phone: { type: String },
+    preferredContactMethod: { type: String },
+    bedrooms: { type: Number },
+    bathrooms: { type: Number },
+    propertySize: { type: Number },
+    propertyLocation: { type: String },
+    filePath: { type: String },
+    availabilityForVisit: { type: String },
+    urgency: { type: String },
+    emiratesId: { type: String },
+    passportNumber: { type: String },
+    documentPath: { type: String },
+    documentName: { type: String },
+
+    // Shared optional fields
+    documents: [{ type: String }],
+    // Random Forest
     assignedAgent: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Reference to assigned agent
+      ref: "User",
       default: null,
       index: true,
     },
-    acceptedAt: { type: Date, default: null }, // Date when request was accepted
-
-    createdAt: { type: Date, default: Date.now },
+    acceptedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

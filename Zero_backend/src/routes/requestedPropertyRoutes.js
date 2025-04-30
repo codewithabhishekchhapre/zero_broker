@@ -4,6 +4,7 @@ const requestedPropertyController = require('../controllers/requestedPropertyCon
 const { accessTokenVerify, authorizeRoles } = require('../middleware/authMiddleware');
 
 // Seller creates a request
+
 // Seller views all requested properties
 router.get(
      '/my-requests',
@@ -59,6 +60,7 @@ router.put(
 
 
 //amin routes
+
 // Admin views all property requests
 router.get(
      '/admin/all-requests',

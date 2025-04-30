@@ -3,6 +3,7 @@ const Property = require('../models/Property');
 const User = require('../models/User');
 const path=require("path")
 const fs=require("fs")
+const mongoose = require('mongoose');
 
 exports.assignProperty = async (req, res) => {
   try {
@@ -89,6 +90,7 @@ exports.assignProperty = async (req, res) => {
 exports.getAgentAssignments = async (req, res) => {
   try {
     const agentId = req.user.id;
+    console.log(agentId)
 
     const assignments = await Assignment.find({ agentId })
       .populate({
@@ -148,50 +150,48 @@ exports.getAgentAssignments = async (req, res) => {
 };
 
 // Get all properties assigned to driver with agent details
+
 exports.getDriverAssignments = async (req, res) => {
   try {
-    const driverId = req.user.id;
+    const driverId = req.user._id;
+    console.log("Looking for driver ID:", driverId, "in collection 'assigndrivers'");
 
-    const assignments = await Assignment.find({ driverId })
-      .populate({
-        path: 'propertyId',
-        select: 'title price location.address details.property_type requested_id',
-        populate: {
-          path: 'requested_id',
-          select: 'seller propertyName',
-          populate: {
-            path: 'seller',
-            select: 'fullname phone email'
-          }
-        }
-      })
-      .populate('agentId', 'fullname mobile email company')
+    // Make sure we're using the right model with correct collection
+    const Assignment = mongoose.model('Assignment');
+    
+    // Try direct query first with proper ObjectId
+    let driverObjectId;
+    try {
+      driverObjectId = mongoose.Types.ObjectId.isValid(driverId) 
+        ? new mongoose.Types.ObjectId(driverId.toString()) 
+        : driverId;
+    } catch (err) {
+      console.error("Error converting driver ID:", err);
+      driverObjectId = driverId;
+    }
+
+    // Query the correct collection
+    const assignments = await Assignment.find({ driverId: driverObjectId })
+      .select('_id driverId propertyId locationDetails visitingDate visitingTime status createdAt updatedAt')
       .sort({ createdAt: -1 });
 
+    console.log(`Found ${assignments.length} assignments for driver ${driverId}`);
+
     const formattedAssignments = assignments.map(assignment => {
-      const property = assignment.propertyId;
-      const requestedProperty = property.requested_id;
-      
       return {
         _id: assignment._id,
+        driverId: assignment.driverId,
+        propertyId: assignment.propertyId,
+        locationDetails: assignment.locationDetails,
+        visitingDate: assignment.visitingDate,
+        visitingTime: assignment.visitingTime,
         status: assignment.status,
         assignedAt: assignment.createdAt,
-        agent: assignment.agentId,
-        property: {
-          _id: property._id,
-          title: property.title,
-          price: property.price,
-          address: property.location.address,
-          type: property.details.property_type,
-          seller: requestedProperty ? {
-            _id: requestedProperty.seller._id,
-            fullname: requestedProperty.seller.fullname,
-            phone: requestedProperty.seller.phone,
-            email: requestedProperty.seller.email
-          } : null
-        }
+        createdAt: assignment.createdAt,
+        updatedAt: assignment.updatedAt
       };
     });
+
 
     res.status(200).json({
       success: true,
@@ -299,81 +299,6 @@ exports.getDriverSubmissions = async (req, res) => {
     });
   }
 };
-// Driver uploads media and location
-// exports.uploadMediaAndLocation = async (req, res) => {
-//   try {
-//     const { assignmentId, longitude, latitude } = req.body;
-//     const driverId = req.user.id;
-
-//     // Find the assignment
-//     const assignment = await Assignment.findOne({
-//       _id: assignmentId,
-//       driverId,
-//       // status: 'accepted'
-//     });
-
-//     if (!assignment) {
-//       return res.status(404).json({ 
-//         success: false,
-//         message: 'Assignment not found or not accepted' 
-//       });
-//     }
-
-//     // Process uploaded files
-//     const media = [];
-    
-//     // Handle image files
-//     if (req.files && req.files.images) {
-//       const images = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
-//       images.forEach(file => {
-//         media.push({
-//           url: file.path.replace(/\\/g, '/'), // Convert backslashes to forward slashes for consistency
-//           type: 'image',
-//           uploadedAt: Date.now()
-//         });
-//       });
-//     }
-
-//     // Handle video files
-//     if (req.files && req.files.videos) {
-//       const videos = Array.isArray(req.files.videos) ? req.files.videos : [req.files.videos];
-//       videos.forEach(file => {
-//         media.push({
-//           url: file.path.replace(/\\/g, '/'),
-//           type: 'video',
-//           uploadedAt: Date.now()
-//         });
-//       });
-//     }
-
-//     // Update assignment
-//     assignment.media = media;
-    
-//     if (longitude && latitude) {
-//       assignment.location = {
-//         type: 'Point',
-//         coordinates: [parseFloat(longitude), parseFloat(latitude)]
-//       };
-//     }
-    
-//     assignment.status = 'media_uploaded';
-//     await assignment.save();
-
-//     res.status(200).json({
-//       success: true,
-//       data: assignment
-//     });
-
-//   } catch (error) {
-//     console.error('Error uploading media:', error);
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to upload media',
-//       error: error.message
-//     });
-//   }
-// };
-
 
 exports.uploadMediaAndLocation = async (req, res) => {
   try {

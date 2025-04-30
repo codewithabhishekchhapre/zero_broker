@@ -30,6 +30,7 @@ exports.createRequest = async (req, res) => {
       address,
       location,
       reasonForSaleOrRent,
+      mode: "self"
     });
 
     res.status(201).json({
@@ -72,6 +73,35 @@ exports.getAllRequestsForAgents = async (req, res) => {
     });
   }
 };
+
+
+// exports.getAllRequestsForAgents = async (req, res) => {
+//   try {
+//     // Fetch all pending property listings
+//     const listings = await PropertyListing.find({ status: "pending" })
+//       .populate("userId", "name email phone") // Populating user info if users are in a separate collection
+//       .sort({ createdAt: -1 })
+//       .lean();
+
+//     res.status(200).json({
+//       status: "success",
+//       message: listings.length
+//         ? "Pending property listings retrieved."
+//         : "No pending property listings found.",
+//       data: listings,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching pending property listings:", error);
+//     res.status(500).json({
+//       status: "failed",
+//       message: "Server error",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+
 // Agent accepts a property request
 exports.acceptRequest = async (req, res) => {
   try {
@@ -112,10 +142,6 @@ exports.acceptRequest = async (req, res) => {
   }
 };
 
-
-
-
-
 //  Seller views all their requested properties
 exports.getMyRequestedProperties = async (req, res) => {
   try {
@@ -144,9 +170,11 @@ exports.getMyRequestedProperties = async (req, res) => {
   }
 };
 
+
 //  Agent views all accepted requests by them
 exports.getAcceptedRequestsByAgent = async (req, res) => {
   try {
+    // console.log("my Id",req.user._id)
     const acceptedRequests = await RequestedProperty.find({
       assignedAgent: req.user._id,
       status: "Accepted"
