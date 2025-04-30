@@ -13,4 +13,4 @@ router.get('/:id',adsController.getAdById)
 router.put('/:id', adsController.updateAd); 
 router.delete('/:id',adsController.deleteAd); 
 
-module.exports=router                                                                                                  
+module.exports=router;
