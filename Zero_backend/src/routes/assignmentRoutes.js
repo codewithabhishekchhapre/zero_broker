@@ -5,6 +5,7 @@ const { uploadDriverMedia } = require("../utils/multer");
 // const authMiddleware = require('../middlewares/authMiddleware');
 // const roleMiddleware = require('../middlewares/roleMiddleware');
 const {authorizeRoles,accessTokenVerify}=require("../middleware/authMiddleware")
+const AssignDriver = require('../models/assignDrivers');
 
 // Agent routes
 router.post(
@@ -18,7 +19,7 @@ router.post(
 router.get('/agent/assignments', accessTokenVerify, authorizeRoles('agent'), assignmentController.getAgentAssignments);
 
 // Driver routes
-router.get('/driver/assignments', accessTokenVerify, authorizeRoles('driver'), assignmentController.getDriverAssignments);
+router.get('/driver/assignments/me', accessTokenVerify, authorizeRoles('driver'), assignmentController.getDriverAssignments);
 
 router.put(
  '/assignments/:assignmentId/review',
@@ -45,12 +46,26 @@ router.get(
   assignmentController.getDriverSubmissions
 );
 
-// Common routes
-// router.get(
-//   '/',
-//   accessTokenVerify,
-//   authorizeRoles('agent', 'driver'),
-//   assignmentController.getAssignments
-// );
+// Random Forest
+
+// assign driver
+router.post('/assign-driver', async (req, res) => {
+  try {
+    // console.log(req.user._id);
+    const assignDriver = new AssignDriver({
+      ...req.body,
+      // agentId: req.user._id
+    });
+
+    await assignDriver.save();
+    res.status(201).json({ message: 'New driver assignment created', data: assignDriver });
+  } catch (error) {
+    console.error('Error creating assignment:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
+
+// Random Forest
 
 module.exports = router;
